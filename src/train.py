@@ -43,8 +43,14 @@ def main(**kwargs):
 
     df = download_prices(params["symbol"], params["start_date"], params["end_date"])
 
-    # Vamos usar Close, Volume, High, Low
-    features = df[["Close", "Volume", "High", "Low"]].dropna().values
+    # Seleciona colunas disponíveis
+    candidate_cols = ["Close", "Volume", "High", "Low"]
+    available_cols = [col for col in candidate_cols if col in df.columns]
+
+    if "Close" not in available_cols:
+        raise ValueError(f"Dados insuficientes para {params['symbol']}. A coluna 'Close' é obrigatória.")
+
+    features = df[available_cols].dropna().values
 
     scaler = MinMaxScaler()
     scaled_features = scaler.fit_transform(features)
@@ -68,7 +74,7 @@ def main(**kwargs):
 
     model.fit(
         X_train,
-        y_train[:, 0],  # vamos prever a primeira feature: Close
+        y_train[:, 0],  # Sempre prevendo o fechamento ("Close")
         validation_data=(X_val, y_val[:, 0]),
         epochs=params["epochs"],
         batch_size=params["batch_size"],
@@ -77,7 +83,7 @@ def main(**kwargs):
     )
 
     joblib.dump(scaler, scaler_path)
-    print(f"Treino concluído. Modelo salvo em {model_checkpoint_path}, scaler salvo em {scaler_path}.\n")
+    print(f"✅ Treino concluído! Modelo salvo em {model_checkpoint_path}, scaler salvo em {scaler_path}.\n")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

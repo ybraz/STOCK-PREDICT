@@ -24,7 +24,14 @@ def main(**kwargs):
     params = {**DEFAULTS, **{k: v for k, v in kwargs.items() if v is not None}}
 
     df = download_prices(params["symbol"], params["start_date"], params["end_date"])
-    features = df[["Close", "Volume", "High", "Low"]].dropna().values
+
+    candidate_cols = ["Close", "Volume", "High", "Low"]
+    available_cols = [col for col in candidate_cols if col in df.columns]
+
+    if "Close" not in available_cols:
+        raise ValueError(f"Dados insuficientes para {params['symbol']}. A coluna 'Close' é obrigatória.")
+
+    features = df[available_cols].dropna().values
 
     scaler = joblib.load(f"models/scaler_{params['symbol']}.pkl")
     scaled_features = scaler.transform(features)

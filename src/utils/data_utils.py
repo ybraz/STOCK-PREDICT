@@ -1,4 +1,3 @@
-"""Funções auxiliares para download e pré-processamento dos dados."""
 from __future__ import annotations
 import os
 from typing import Tuple
@@ -14,16 +13,25 @@ def download_prices(symbol: str, start: str, end: str, cache_dir: str = "data/ra
         df = pd.read_csv(cache_path, parse_dates=["Date"])
         df.set_index("Date", inplace=True)
     else:
-        df = yf.download(symbol, start=start, end=end)
-        
-        # Se o download incluir uma coluna de múltiplos ativos, corrige:
+        df = yf.download(symbol, start=start, end=end, auto_adjust=True)
+
+        # Se vier MultiIndex, corrige:
         if isinstance(df.columns, pd.MultiIndex):
-            df = df["Close"].to_frame()  # Pega apenas o Close
-            df.columns = ["Close"]
-        
-        df.reset_index(inplace=True)  # Date como coluna
+            df.columns = df.columns.get_level_values(0)  # Pega apenas o primeiro nível: 'Close', 'High', etc.
+
+        df.columns.name = None
+        df.reset_index(inplace=True)
         df.to_csv(cache_path, index=False)
         df.set_index("Date", inplace=True)
+
+    # Agora filtra as colunas corretas
+    expected_cols = ["Close", "Volume", "High", "Low", "Open"]
+    available_cols = [col for col in expected_cols if col in df.columns]
+
+    if "Close" not in available_cols:
+        raise ValueError(f"O ativo {symbol} não possui coluna 'Close' disponível.")
+
+    df = df[available_cols]
 
     return df
 
