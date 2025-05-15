@@ -1,0 +1,10 @@
+pandas
+numpy
+yfinance
+scikit-learn
+tensorflow~=2.16
+fastapi
+uvicorn[standard]
+prometheus-client
+joblib
+python-dotenv
