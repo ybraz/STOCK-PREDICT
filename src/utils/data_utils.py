@@ -11,11 +11,14 @@ def download_prices(symbol: str, start: str, end: str, cache_dir: str = "data/ra
     cache_path = os.path.join(cache_dir, f"{symbol}.csv")
 
     if os.path.exists(cache_path):
-        df = pd.read_csv(cache_path, index_col="Date", parse_dates=True)
+        # Agora lê corretamente com Date como coluna
+        df = pd.read_csv(cache_path, parse_dates=["Date"])
+        df.set_index("Date", inplace=True)
     else:
         df = yf.download(symbol, start=start, end=end)
-        df.index.name = "Date"
-        df.to_csv(cache_path)
+        df.reset_index(inplace=True)  # <- AQUI: transforma o índice "Date" numa coluna real
+        df.to_csv(cache_path, index=False)  # <- AQUI: salva a coluna "Date" no CSV
+        df.set_index("Date", inplace=True)
 
     return df
 

@@ -7,7 +7,7 @@ import joblib
 from dotenv import load_dotenv
 from tensorflow.keras.models import load_model
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from utils.data_utils import download_prices, create_sequences, train_val_test_split
+from src.utils.data_utils import download_prices, create_sequences, train_val_test_split
 
 load_dotenv()
 
