@@ -1,173 +1,143 @@
-# 📈 LSTM Stock Price Prediction API
+# 📈 LSTM Stock Price Prediction
 
-Projeto de previsão de preços de ações usando uma rede **LSTM** treinada em séries temporais históricas e disponibilizada via **FastAPI**.
+Projeto de previsão de preços de ações usando LSTM (Long Short-Term Memory) em Python.
 
----
+Disponibiliza:
+- Scripts de treino e avaliação de modelo.
+- API para inferência via FastAPI.
+- Métricas Prometheus para monitoramento.
+- Dockerfile para deploy fácil.
 
-## 🚀 Funcionalidades
+## 📦 Estrutura do Projeto
 
-- Treina um modelo **LSTM** com dados históricos do Yahoo Finance.
-- Avalia o modelo com métricas **MAE**, **RMSE** e **MAPE**.
-- Expõe uma **API REST** para inferência do próximo preço.
-- Monitoramento de métricas via **Prometheus** (`/metrics`).
-- Deploy fácil via **Docker**.
-
----
-
-## 📦 Estrutura de Diretórios
-
-```text
+```
 lstm-stock-prediction/
 ├── api/
 │   ├── main.py
 │   └── schemas.py
 ├── data/
-│   └── raw/               # CSVs baixados
-├── models/
-│   ├── lstm_stock.h5       # Modelo treinado
-│   └── scaler.pkl          # Scaler salvo
+│   └── raw/              # CSVs baixados
+├── models/               # Modelos e scalers salvos
 ├── src/
 │   ├── train.py
 │   ├── evaluate.py
 │   └── utils/
 │       └── data_utils.py
+├── .gitignore
 ├── .env.example
-├── requirements.txt
 ├── Dockerfile
 ├── Makefile
+├── requirements.txt
 └── README.md
 ```
 
----
+## 🚀 Como usar
 
-## ⚙️ Instalação
-
-1. Clone o projeto:
-
-```bash
-git clone https://github.com/seu-usuario/lstm-stock-prediction.git
-cd lstm-stock-prediction
-```
-
-2. Crie o ambiente virtual e instale dependências:
+### 1. Preparar ambiente
 
 ```bash
 make setup
 ```
 
+(ou manualmente: criar `.venv`, ativar, instalar `requirements.txt`)
+
 ---
 
-## 🏋️‍♂️ Treino do Modelo
+### 2. Treinar o modelo
 
-Treina o modelo com dados históricos:
+Treino normal:
 
 ```bash
 make train SYMBOL=DIS
 ```
 
-- O modelo será salvo em `models/lstm_stock.h5`
-- O scaler será salvo em `models/scaler.pkl`
+Treino forte (recomendado):
+
+```bash
+make strong-train SYMBOL=DIS
+```
+
+**O treino forte usa:**
+- Histórico desde 2010
+- 180 dias de sequência
+- 200 épocas
+- Modelo LSTM mais profundo (128-64-32)
+
+Os arquivos salvos serão:
+
+```
+models/lstm_<SYMBOL>.h5
+models/scaler_<SYMBOL>.pkl
+```
 
 ---
 
-## 📊 Avaliação
-
-Avalia o modelo no conjunto de teste:
+### 3. Avaliar o modelo
 
 ```bash
 make evaluate SYMBOL=DIS
 ```
 
-Exibe:
+Exibe as métricas:
 
-- MAE
-- RMSE
-- MAPE
+- MAE (Erro Médio Absoluto)
+- RMSE (Erro Quadrático Médio)
+- MAPE (Erro Percentual Médio)
 
 ---
 
-## 🖥️ Subir a API Localmente
+### 4. Rodar a API localmente
 
 ```bash
 make api
 ```
 
-API disponível em:
-
-```
-http://localhost:8000
-```
+- A API estará em: `http://localhost:8000`
+- Documentação Swagger: `http://localhost:8000/docs`
+- Métricas Prometheus: `http://localhost:8000/metrics`
 
 ---
 
-## 🔮 Fazer Previsão
-
-Com a API rodando, rode:
+### 5. Fazer uma previsão
 
 ```bash
 make predict SYMBOL=DIS
 ```
 
-Ou manualmente via `curl`:
+Ou manualmente via curl:
 
 ```bash
 curl -X POST http://localhost:8000/predict \
   -H "Content-Type: application/json" \
-  -d '{"symbol": "DIS", "seq_length": 60}'
-```
-
-🔵 Retorno esperado:
-
-```json
-{"next_price": 120.45}
+  -d '{"symbol": "DIS", "seq_length": 180}'
 ```
 
 ---
 
-## 📈 Monitoramento
+### 6. Monitorar com TensorBoard
 
-- `GET /metrics` → métricas Prometheus
-- `GET /health` → checagem de saúde
+```bash
+make tensorboard
+```
+
+Acesse:
+
+```
+http://localhost:6006
+```
 
 ---
 
-## 🐳 Deploy com Docker
+### 7. Deploy com Docker
 
-Build da imagem:
+Buildar a imagem:
 
 ```bash
 make docker-build
 ```
 
-Run do container:
+Rodar o container:
 
 ```bash
 make docker-run
 ```
-
----
-
-## 📋 Variáveis de Ambiente
-
-O projeto usa `.env` para parâmetros padrão.  
-Exemplo (`.env.example`):
-
-```bash
-SYMBOL=DIS
-START_DATE=2018-01-01
-END_DATE=2024-07-20
-SEQ_LENGTH=60
-TEST_SIZE=0.2
-VAL_SIZE=0.1
-EPOCHS=50
-BATCH_SIZE=32
-```
-
----
-
-## ✨ Melhorias Futuras
-
-- Adicionar suporte a múltiplos ativos simultaneamente.
-- Melhorar gestão de cache dos dados Yahoo.
-- Implementar autenticação na API.
-- Deploy automático em nuvem (AWS, GCP, Railway).
