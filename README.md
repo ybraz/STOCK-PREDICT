@@ -1,45 +1,40 @@
-# 📈 LSTM Stock Price Prediction
+# 📈 LSTM Stock Prediction com Indicadores Técnicos
 
-Projeto para previsão de preços de ações usando LSTM (Long Short-Term Memory) em Python, com indicadores técnicos e avaliação robusta.
-
-Funcionalidades:
-- Scripts para treino e avaliação de modelos.
-- API para inferência via FastAPI.
-- Métricas Prometheus para monitoramento.
-- Dockerfile para deploy simples.
+Pipeline completo para previsão de **retorno diário** (Close / Open − 1) de ações, usando:
+- LSTM regularizado (Dropout)
+- Indicadores técnicos (SMA, EMA, RSI, MACD)
+- Otimização de hiperparâmetros via Keras-Tuner (RandomSearch)
+- API FastAPI para previsão online
+- Métricas Prometheus para monitoramento
+- Pronto para Docker
 
 ---
 
-## 📦 Estrutura do Projeto
+## 📁 Estrutura do Projeto
 
 lstm-stock-prediction/
     api/
         main.py
         schemas.py
     data/
-        raw/              # CSVs baixados automaticamente
-    models/               # Modelos e scalers salvos
+        raw/                # CSVs baixados automaticamente
+    models/                 # Modelos treinados e scalers
     src/
         train.py
         evaluate.py
         utils/
             data_utils.py
-    .gitignore
-    .env.example
-    Dockerfile
     Makefile
     requirements.txt
     README.md
 
 ---
 
-## 🚀 Como usar
+## 🚀 Como Usar
 
 ### 1. Preparar ambiente
 
-    make setup
-
-Ou manualmente:
+Crie um ambiente virtual e instale as dependências:
 
     python -m venv .venv
     source .venv/bin/activate
@@ -49,72 +44,70 @@ Ou manualmente:
 
 ### 2. Treinar o modelo
 
-Treino normal:
+Treine o modelo com hiperparâmetros otimizados via Keras-Tuner (RandomSearch):
 
-    make train SYMBOL=DIS
+    make train-AAPL
 
-Treino robusto (recomendado):
-
-    make strong-train SYMBOL=DIS
-
-No treino forte são usados:
-- Histórico desde 2005/2010
+Por padrão, são usados:
 - Sequência de 180 dias
-- 200 épocas
-- Busca por hiperparâmetros e arquitetura LSTM mais profunda
+- Busca por hiperparâmetros (número de unidades LSTM, dropout, learning-rate)
+- Indicadores técnicos como features
 
-Arquivos salvos:
-- models/lstm_<SYMBOL>.keras
-- models/scalers_<SYMBOL>.pkl
+O modelo treinado e o scaler serão salvos em `models/`.
 
 ---
 
 ### 3. Avaliar o modelo
 
-    make evaluate SYMBOL=DIS
+Para avaliar a performance (MAE, RMSE, MAPE, SMAPE):
 
-Exibe as métricas:
-- MAE (Erro Médio Absoluto)
-- RMSE (Erro Quadrático Médio)
-- MAPE (Erro Percentual Médio)
-- SMAPE (Erro Percentual Médio Simétrico)
+    make evaluate-AAPL
+
+Exibe as métricas de erro para o retorno previsto vs. o real.
 
 ---
 
-### 4. Rodar a API localmente
+### 4. Rodar a API
+
+Inicie a API localmente:
 
     make api
 
-- A API estará disponível em: http://localhost:8000
-- Documentação Swagger: http://localhost:8000/docs
+Acesse:
+- Swagger UI: http://localhost:8000/docs
 - Métricas Prometheus: http://localhost:8000/metrics
 
 ---
 
 ### 5. Fazer uma previsão
 
-    make predict SYMBOL=DIS
+Via makefile:
 
-Ou manualmente via curl:
+    make predict-AAPL
+
+Ou manualmente, por curl:
 
     curl -X POST http://localhost:8000/predict \
       -H "Content-Type: application/json" \
-      -d '{"symbol": "DIS", "seq_length": 180}'
+      -d '{"symbol": "AAPL", "seq_length": 180}'
+
+A resposta inclui o preço de fechamento previsto e o retorno percentual esperado.
 
 ---
 
 ### 6. Monitorar com TensorBoard
 
+Se habilitar logs do tuner:
+
     make tensorboard
 
-Acesse:
-- http://localhost:6006
+Acesse em http://localhost:6006
 
 ---
 
 ### 7. Deploy com Docker
 
-Buildar a imagem:
+Build da imagem:
 
     make docker-build
 
@@ -123,3 +116,28 @@ Rodar o container:
     make docker-run
 
 ---
+
+## 🧠 Sobre Keras-Tuner
+
+O projeto utiliza [Keras-Tuner](https://keras.io/keras_tuner/) para buscar automaticamente os melhores hiperparâmetros (número de unidades LSTM, taxa de dropout e learning-rate), testando diferentes combinações via RandomSearch. Isso permite um modelo mais robusto e ajustado ao ativo em questão.
+
+---
+
+## 📊 Métricas
+
+- **MAE**: Erro Médio Absoluto do retorno previsto (em pontos percentuais)
+- **RMSE**: Raiz do Erro Quadrático Médio
+- **MAPE**: Erro Percentual Absoluto Médio (ajustado para retornos próximos de zero)
+- **SMAPE**: Erro Percentual Absoluto Médio Simétrico
+
+Foque especialmente em **MAE** e **RMSE** para avaliação de performance em finanças.
+
+---
+
+## 📌 Notas Finais
+
+- Os dados são baixados automaticamente do Yahoo Finance usando yfinance.
+- O pipeline inclui indicadores técnicos padrão do mercado.
+- O código está modularizado para facilitar experimentação e customização.
+
+Dúvidas? Sugestões? Abra uma issue ou contribua!

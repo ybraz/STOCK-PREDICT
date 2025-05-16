@@ -2,6 +2,8 @@ PY=python
 SRC=src
 API=api
 
+.PHONY: train-% evaluate-% api setup predict-% tensorboard docker-build docker-run
+
 train-%:
 	PYTHONPATH=. $(PY) $(SRC)/train.py $* --seq 180 --epochs 30
 
@@ -23,7 +25,7 @@ predict-%:
 	  -d '{"symbol": "$*", "seq_length": 180}'
 
 tensorboard:
-	tensorboard --logdir tuner
+	tensorboard --logdir logs
 
 docker-build:
 	docker build -t lstm-stock-prediction .
