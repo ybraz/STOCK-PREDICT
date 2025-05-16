@@ -1,38 +1,32 @@
-# Variáveis
-SYMBOL=SBSP3.SA
+PY=python
+SRC=src
+API=api
 
-# Comandos
+train-%:
+	PYTHONPATH=. $(PY) $(SRC)/train.py $* --seq 180 --epochs 30
 
-setup:
-	python -m venv .venv && source .venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
+strong-train-%:
+	PYTHONPATH=. $(PY) $(SRC)/train.py $* --seq 180 --epochs 200 --trials 20 --start 2005-01-01
 
-train:
-	python -m src.train --symbol $(SYMBOL)
-
-strong-train:
-	python -m src.train --symbol $(SYMBOL) --seq_length 180 --start_date 2010-01-01 --end_date 2025-01-01 --epochs 200
-
-evaluate:
-	python -m src.evaluate --symbol $(SYMBOL)
+evaluate-%:
+	PYTHONPATH=. $(PY) $(SRC)/evaluate.py $* --seq 180
 
 api:
-	uvicorn api.main:app --reload
+	uvicorn $(API).main:app --reload --port 8000
 
-predict:
+setup:
+	$(PY) -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
+
+predict-%:
 	curl -X POST http://localhost:8000/predict \
 	  -H "Content-Type: application/json" \
-	  -d '{"symbol": "$(SYMBOL)", "seq_length": 180}'
-
-docker-build:
-	docker build -t lstm-api .
-
-docker-run:
-	docker run -p 8000:8000 lstm-api
+	  -d '{"symbol": "$*", "seq_length": 180}'
 
 tensorboard:
-	tensorboard --logdir=runs
+	tensorboard --logdir tuner
 
-clean:
-	rm -rf models/*.h5 models/*.pkl data/raw/*.csv runs/
+docker-build:
+	docker build -t lstm-stock-prediction .
 
-.PHONY: setup train strong-train evaluate api predict docker-build docker-run tensorboard clean
+docker-run:
+	docker run -p 8000:8000 lstm-stock-prediction

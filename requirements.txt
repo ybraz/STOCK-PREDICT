@@ -8,3 +8,4 @@ uvicorn[standard]
 prometheus-client
 joblib
 python-dotenv
+keras-tuner

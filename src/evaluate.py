@@ -1,63 +1,70 @@
-"""Avalia o modelo salvo nas partições de validação e teste."""
-from __future__ import annotations
+#!/usr/bin/env python3
+"""
+Avalia a qualidade do modelo em MAE, RMSE, MAPE e SMAPE
+sobre o retorno diário (Close / Open − 1).
+
+Uso:
+    PYTHONPATH=. python src/evaluate.py AAPL --seq 180 --split 0.8
+"""
 import argparse
-import os
 import numpy as np
-import joblib
-from dotenv import load_dotenv
-from tensorflow.keras.models import load_model
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from src.utils.data_utils import download_prices, create_sequences, train_val_test_split
 
-load_dotenv()
-
-DEFAULTS = dict(
-    symbol=os.getenv("SYMBOL", "DIS"),
-    start_date=os.getenv("START_DATE", "2010-01-01"),
-    end_date=os.getenv("END_DATE", "2025-01-01"),
-    seq_length=int(os.getenv("SEQ_LENGTH", 180)),
-    test_size=float(os.getenv("TEST_SIZE", 0.2)),
-    val_size=float(os.getenv("VAL_SIZE", 0.1)),
+from src.utils.data_utils import (
+    download_prices,
+    build_feature_frame,
+    make_sequences,
+    load_model_and_scalers,
 )
 
-def main(**kwargs):
-    params = {**DEFAULTS, **{k: v for k, v in kwargs.items() if v is not None}}
+# ────────────────────────────────
+# Argumentos de CLI
+# ────────────────────────────────
+p = argparse.ArgumentParser()
+p.add_argument("symbol")
+p.add_argument("--seq", type=int, default=180, help="Comprimento da janela LSTM")
+p.add_argument("--split", type=float, default=0.8, help="Fraç. treino (0–1)")
+args = p.parse_args()
 
-    df = download_prices(params["symbol"], params["start_date"], params["end_date"])
+# ────────────────────────────────
+# Monta base de teste
+# ────────────────────────────────
+df_full = build_feature_frame(download_prices(args.symbol))
+split_idx = int(len(df_full) * args.split)
+test_df = df_full.iloc[split_idx - args.seq :]
 
-    candidate_cols = ["Close", "Volume", "High", "Low"]
-    available_cols = [col for col in candidate_cols if col in df.columns]
+X_test, y_test_scaled, _, _ = make_sequences(test_df, args.seq)
+model, scalers = load_model_and_scalers(args.symbol)
 
-    if "Close" not in available_cols:
-        raise ValueError(f"Dados insuficientes para {params['symbol']}. A coluna 'Close' é obrigatória.")
+# ────────────────────────────────
+# Previsão e inversão de escala
+# ────────────────────────────────
+pred_scaled = model.predict(X_test, verbose=0)
+y_test = scalers["y"].inverse_transform(y_test_scaled)
+pred = scalers["y"].inverse_transform(pred_scaled)
 
-    features = df[available_cols].dropna().values
+# ────────────────────────────────
+# Métricas
+# ────────────────────────────────
+mae = mean_absolute_error(y_test, pred)
+rmse = np.sqrt(mean_squared_error(y_test, pred))
 
-    scaler = joblib.load(f"models/scaler_{params['symbol']}.pkl")
-    scaled_features = scaler.transform(features)
+# MAPE robusto: evita divisão por zero
+epsilon = 1e-8
+den = np.where(np.abs(y_test) < epsilon, epsilon, y_test)
+mape = np.mean(np.abs((y_test - pred) / den)) * 100
 
-    train, val, test = train_val_test_split(scaled_features, params["val_size"], params["test_size"])
-    X_test, y_test = create_sequences(np.concatenate([train[-params["seq_length"]:], val, test]), params["seq_length"])
+# SMAPE (opcional, mas útil)
+smape = (
+    np.mean(np.abs(y_test - pred) / (np.abs(y_test) + np.abs(pred) + epsilon))
+    * 100
+)
 
-    model = load_model(f"models/lstm_{params['symbol']}.h5")
-    preds_scaled = model.predict(X_test)
-
-    # Só queremos avaliar a feature "Close" (posição 0)
-    preds = scaler.inverse_transform(np.hstack([preds_scaled, np.zeros((preds_scaled.shape[0], 3))]))[:, 0]
-    y_true = scaler.inverse_transform(np.hstack([y_test[:, 0].reshape(-1, 1), np.zeros((y_test.shape[0], 3))]))[:, 0]
-
-    mae = mean_absolute_error(y_true, preds)
-    rmse = mean_squared_error(y_true, preds, squared=False)
-    mape = np.mean(np.abs((y_true - preds) / y_true)) * 100
-
-    print(f"MAE:  {mae:.2f}")
-    print(f"RMSE: {rmse:.2f}")
-    print(f"MAPE: {mape:.2f}%")
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    for k, v in DEFAULTS.items():
-        arg_type = type(v)
-        parser.add_argument(f"--{k}", type=arg_type, default=None)
-    args = vars(parser.parse_args())
-    main(**args)
+# ────────────────────────────────
+# Relatório
+# ────────────────────────────────
+print(f"===== Avaliação {args.symbol} =====")
+print(f"MAE   : {mae:.6f}  (~{mae*100:.2f} p.p.)")
+print(f"RMSE  : {rmse:.6f}  (~{rmse*100:.2f} p.p.)")
+print(f"MAPE  : {mape:.2f} %")
+print(f"SMAPE : {smape:.2f} %")
