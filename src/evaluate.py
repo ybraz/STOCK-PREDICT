@@ -5,9 +5,6 @@ usando as métricas MAE, RMSE, MAPE e SMAPE sobre o retorno (Close / Open − 1)
 
 Uso:
     PYTHONPATH=. python src/evaluate.py AAPL --seq 180 --split 0.8
-
-Autor: [Seu Nome]
-Data: [Data Atual]
 """
 
 import argparse
