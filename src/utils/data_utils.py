@@ -2,9 +2,6 @@
 """
 Módulo para previsão de preços de ativos financeiros utilizando LSTM com Dropout,
 engenharia de atributos baseada em indicadores técnicos e _hyper-tuning_ via Keras-Tuner.
-
-Desenvolvido para uso acadêmico, com foco em boas práticas, modularização, documentação
-e clareza de código.
 """
 
 from __future__ import annotations
