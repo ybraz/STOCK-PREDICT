@@ -34,6 +34,8 @@ lstm-stock-prediction/
 
 ### 1. Preparar ambiente
 
+Testado apenas com Python 3.11.9
+
 Crie um ambiente virtual e instale as dependências:
 
     python -m venv .venv
