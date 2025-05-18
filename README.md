@@ -57,6 +57,10 @@ Por padrão, são usados:
 
 O modelo treinado e o scaler serão salvos em `models/`.
 
+> **Importante:** Para ações brasileiras (B3), utilize TICKER.SA
+
+    make train-SBSP3.SA
+
 ---
 
 ### 3. Avaliar o modelo
