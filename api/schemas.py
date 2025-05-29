@@ -24,3 +24,14 @@ class PredictResponse(BaseModel):
     """
     next_price: float
     expected_return_pct: float
+
+class TrainRequest(BaseModel):
+    symbol: str
+    start_date: Optional[str] = "2005-01-01"
+    end_date: Optional[str] = None 
+
+class TrainResponse(BaseModel):
+    message: str 
+    model_path: str
+    scaler_x_path: str 
+    scaler_y_path: str  

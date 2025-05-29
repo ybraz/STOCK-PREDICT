@@ -4,6 +4,7 @@ API de previsão de retorno diário de ativos, utilizando features técnicos e O
 Endpoints:
     - POST /predict: Faz previsão de retorno diário e preço futuro.
     - GET  /metrics: Exibe métricas Prometheus (latência, total de requisições).
+    - POST /train: Treina o modelo LSTM com os dados mais recentes.
 
 Dependências:
     - FastAPI, yfinance, prometheus_client, numpy, pytz
@@ -92,6 +93,27 @@ def predict(r: PredictRequest):
         next_price=round(open_price * (1 + ret), 4),
         expected_return_pct=round(ret * 100, 2),  # valor percentual
     )
+
+@app.post("/train", response_model=TrainResponse)
+def train(r: TrainRequest):
+    """
+    Treina ou atualiza o modelo para o ativo fornecido.
+    """
+    try:
+        # Treinar o modelo
+        model_path, scaler_x_path, scaler_y_path = train_model(r.symbol, r.start_date, r.end_date)
+
+        # Retornar os caminhos dos arquivos salvos
+        return TrainResponse(
+            message=f"Modelo treinado com sucesso para o ativo {r.symbol}.",
+            model_path=model_path,
+            scaler_x_path=scaler_x_path,
+            scaler_y_path=scaler_y_path,
+        )
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"Erro interno: {str(e)}")
 
 # Exposição de métricas para Prometheus
 app.mount("/metrics", make_asgi_app())

@@ -222,3 +222,51 @@ def load_model_and_scalers(symbol: str):
         load_model(MODELS / f"lstm_{symbol}.keras"),
         joblib.load(MODELS / f"scalers_{symbol}.pkl"),
     )
+
+def train_model(symbol: str, start_date: str, end_date: str | None = None):
+    """
+    Treina um modelo LSTM para o ativo fornecido.
+    """
+    # Baixar dados históricos
+    df = download_prices(symbol, start=start_date, end=end_date)
+    if df.empty:
+        raise ValueError(f"Dados históricos indisponíveis para o ativo {symbol}.")
+
+    # Engenharia de features
+    df["Return"] = df["Close"].pct_change()
+    df.dropna(inplace=True)
+    X = df[["Open", "High", "Low", "Close", "Volume"]].values
+    y = df["Return"].values
+
+    # Escalar os dados
+    scaler_x = MinMaxScaler()
+    scaler_y = MinMaxScaler()
+    X_scaled = scaler_x.fit_transform(X)
+    y_scaled = scaler_y.fit_transform(y.reshape(-1, 1))
+
+    # Criar sequências para LSTM
+    seq_length = 180
+    X_seq, y_seq = [], []
+    for i in range(seq_length, len(X_scaled)):
+        X_seq.append(X_scaled[i - seq_length:i])
+        y_seq.append(y_scaled[i])
+    X_seq, y_seq = np.array(X_seq), np.array(y_seq)
+
+    # Criar o modelo LSTM
+    model = Sequential([
+        LSTM(50, return_sequences=True, input_shape=(X_seq.shape[1], X_seq.shape[2])),
+        LSTM(50, return_sequences=False),
+        Dense(1)
+    ])
+    model.compile(optimizer="adam", loss="mse")
+    model.fit(X_seq, y_seq, epochs=10, batch_size=32, verbose=1)
+
+    # Salvar o modelo e os scalers
+    model_path = MODELS / f"{symbol}_model.h5"
+    scaler_x_path = MODELS / f"{symbol}_scaler_x.pkl"
+    scaler_y_path = MODELS / f"{symbol}_scaler_y.pkl"
+    model.save(model_path)
+    joblib.dump(scaler_x, scaler_x_path)
+    joblib.dump(scaler_y, scaler_y_path)
+
+    return str(model_path), str(scaler_x_path), str(scaler_y_path)
