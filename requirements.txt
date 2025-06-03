@@ -9,3 +9,4 @@ prometheus-client
 joblib
 python-dotenv
 keras-tuner
+prometheus_fastapi_instrumentator

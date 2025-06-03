@@ -111,15 +111,24 @@ Acesse em http://localhost:6006
 
 ---
 
-### 7. Deploy com Docker
+### 7. Deploy com Docker compose
 
-Build da imagem:
+Build das imagens:
 
-    make docker-build
+    docker-compose up --build
 
-Rodar o container:
+---
 
-    make docker-run
+### 8. Grafana e Prometheus
+
+ # Grafana:
+    URL: http://localhost:3000
+    user: admin
+    password: admin
+    Dashboard: Flask monintoring
+
+# Prometheus:
+    URL: http://localhost:9090
 
 ---
 
