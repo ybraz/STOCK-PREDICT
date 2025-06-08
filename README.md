@@ -123,4 +123,3 @@ O projeto utiliza o Keras-Tuner para testar diferentes combinações de hiperpar
 - Dados obtidos automaticamente do Yahoo Finance via `yfinance`
 - Pipeline modular para facilitar customização
 - Contribuições são bem-vindas! Abra uma issue ou PR
-
