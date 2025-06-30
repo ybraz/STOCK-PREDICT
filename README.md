@@ -60,6 +60,8 @@ make setup
 ```
 
 > **Nota:** O comando `make setup` criará o ambiente virtual automaticamente.
+> 
+> **Importante:** Se usar a opção manual, lembre-se de ativar o ambiente virtual (`source .venv/bin/activate`) antes de executar os comandos subsequentes.
 
 ---
 
@@ -69,9 +71,9 @@ Treine o modelo com hiperparâmetros otimizados via Keras-Tuner (RandomSearch):
 
     make train-AAPL
 
-Por padrão, são usados:
+Por padrão, o comando `make train-SYMBOL` usa:
 - Sequência de 180 dias
-- 30 épocas de treinamento
+- 30 épocas de treinamento (especificado no Makefile)
 - 10 tentativas de otimização de hiperparâmetros
 - Indicadores técnicos como features
 
@@ -91,6 +93,8 @@ O modelo treinado e o scaler serão salvos em `models/`.
 
     make train-SBSP3.SA
     make strong-train-SBSP3.SA
+
+> **Nota:** Para executar os scripts diretamente, use `PYTHONPATH=. python src/train.py SYMBOL [opções]`
 
 ---
 
