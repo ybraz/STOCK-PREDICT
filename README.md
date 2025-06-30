@@ -12,21 +12,30 @@ Pipeline completo para previsão de **retorno diário** (Close / Open − 1) de 
 
 ## 📁 Estrutura do Projeto
 
-lstm-stock-prediction/
-    api/
-        main.py
-        schemas.py
-    data/
-        raw/                # CSVs baixados automaticamente
-    models/                 # Modelos treinados e scalers
-    src/
-        train.py
-        evaluate.py
-        utils/
-            data_utils.py
-    Makefile
-    requirements.txt
-    README.md
+```
+STOCK-PREDICT/
+├── api/
+│   ├── __init__.py
+│   ├── main.py
+│   └── schemas.py
+├── data/
+│   └── raw/                # CSVs baixados automaticamente (criado dinamicamente)
+├── logs/                   # Logs do TensorBoard (criado durante treinamento)
+├── models/                 # Modelos treinados e scalers
+├── src/
+│   ├── __init__.py
+│   ├── train.py
+│   ├── evaluate.py
+│   └── utils/
+│       ├── __init__.py
+│       └── data_utils.py
+├── tuner/                  # Dados do Keras-Tuner (criado durante otimização)
+├── .env.example
+├── Dockerfile
+├── Makefile
+├── requirements.txt
+└── README.md
+```
 
 ---
 
@@ -38,9 +47,21 @@ Testado apenas com Python 3.11.9
 
 Crie um ambiente virtual e instale as dependências:
 
-    python -m venv .venv
-    source .venv/bin/activate
-    pip install -r requirements.txt
+**Opção 1: Manual**
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+**Opção 2: Via Makefile**
+```bash
+make setup
+```
+
+> **Nota:** O comando `make setup` criará o ambiente virtual automaticamente.
+> 
+> **Importante:** Se usar a opção manual, lembre-se de ativar o ambiente virtual (`source .venv/bin/activate`) antes de executar os comandos subsequentes.
 
 ---
 
@@ -50,16 +71,30 @@ Treine o modelo com hiperparâmetros otimizados via Keras-Tuner (RandomSearch):
 
     make train-AAPL
 
-Por padrão, são usados:
+Por padrão, o comando `make train-SYMBOL` usa:
 - Sequência de 180 dias
-- Busca por hiperparâmetros (número de unidades LSTM, dropout, learning-rate)
+- 30 épocas de treinamento (especificado no Makefile)
+- 10 tentativas de otimização de hiperparâmetros
 - Indicadores técnicos como features
+
+Para um treinamento mais intensivo com mais dados históricos e tentativas:
+
+    make strong-train-AAPL
+
+O comando `strong-train` usa:
+- Sequência de 180 dias
+- 200 épocas de treinamento
+- 20 tentativas de otimização de hiperparâmetros
+- Dados desde 2005-01-01
 
 O modelo treinado e o scaler serão salvos em `models/`.
 
 > **Importante:** Para ações brasileiras (B3), utilize TICKER.SA
 
     make train-SBSP3.SA
+    make strong-train-SBSP3.SA
+
+> **Nota:** Para executar os scripts diretamente, use `PYTHONPATH=. python src/train.py SYMBOL [opções]`
 
 ---
 
@@ -83,6 +118,11 @@ Acesse:
 - Swagger UI: http://localhost:8000/docs
 - Métricas Prometheus: http://localhost:8000/metrics
 
+**Endpoints disponíveis:**
+- `POST /predict`: Faz previsão de retorno diário e preço futuro
+- `POST /train`: Treina o modelo LSTM com dados mais recentes
+- `GET /metrics`: Exibe métricas Prometheus
+
 ---
 
 ### 5. Fazer uma previsão
@@ -101,7 +141,24 @@ A resposta inclui o preço de fechamento previsto e o retorno percentual esperad
 
 ---
 
-### 6. Monitorar com TensorBoard
+### 6. Treinar modelo via API
+
+Você também pode treinar modelos através da API:
+
+    curl -X POST http://localhost:8000/train \
+      -H "Content-Type: application/json" \
+      -d '{"symbol": "AAPL", "start_date": "2010-01-01", "end_date": null}'
+
+Parâmetros da requisição:
+- `symbol`: Ticker do ativo (obrigatório)
+- `start_date`: Data inicial dos dados (opcional, padrão: "2005-01-01")
+- `end_date`: Data final dos dados (opcional, padrão: data atual)
+
+A resposta inclui os caminhos dos arquivos do modelo e scalers salvos.
+
+---
+
+### 7. Monitorar com TensorBoard
 
 Se habilitar logs do tuner:
 
@@ -111,7 +168,7 @@ Acesse em http://localhost:6006
 
 ---
 
-### 7. Deploy com Docker
+### 8. Deploy com Docker
 
 Build da imagem:
 
