@@ -21,7 +21,7 @@ from fastapi import FastAPI, HTTPException
 from prometheus_client import Summary, Counter, make_asgi_app
 
 from api.schemas import PredictRequest, PredictResponse, TrainRequest, TrainResponse
-from src.utils.data_utils import fetch_recent_features, load_model_and_scalers
+from src.utils.data_utils import fetch_recent_features, load_model_and_scalers, train_model
 
 DEFAULT_SEQ = 180  # Tamanho padrão da sequência de entrada LSTM
 app = FastAPI(title="Tech-Return Predictor")
